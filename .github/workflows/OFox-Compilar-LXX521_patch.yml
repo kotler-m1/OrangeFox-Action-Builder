@@ -1,4 +1,4 @@
-name: OFox-Build-LXX521
+name: OFox - LXX521 - Build
 
 # Credits to:
 # https://github.com/TeamWin
@@ -44,7 +44,7 @@ on:
         - recovery
         - vendorboot
       PATCH_CORE_MAKEFILE:
-        description: 'Replace build/make/core/Makefile with custom version from kotler-m1 (set false to keep stock)'
+        description: 'Replace build/make/core/Makefile with custom version (set false to keep stock)'
         required: true
         default: true
         type: boolean
@@ -78,8 +78,7 @@ jobs:
             fail=1
           fi
         done
-        if [ "${{ inputs.PATCH_CORE_MAKEFILE }}" = "true" ] && \
-           [ -z "${{ inputs.CUSTOM_MAKEFILE_URL }}" ]; then
+        if [ "${{ inputs.PATCH_CORE_MAKEFILE }}" = "true" ] && [ -z "${{ inputs.CUSTOM_MAKEFILE_URL }}" ]; then
           echo "::error::PATCH_CORE_MAKEFILE=true requires CUSTOM_MAKEFILE_URL."
           fail=1
         fi
@@ -126,11 +125,7 @@ jobs:
         cd sync
         ./orangefox_sync.sh --branch ${{ inputs.MANIFEST_BRANCH }} --path ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}
 
-    
-    # Install custom core Makefile (full replacement).
-    #   PATCH_CORE_MAKEFILE=true  -> download CUSTOM_MAKEFILE_URL and
-    #                                replace .../build/make/core/Makefile
- 
+    - name: Install Custom Core Makefile
       if: inputs.PATCH_CORE_MAKEFILE == true
       run: |
         cd ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}
@@ -156,7 +151,7 @@ jobs:
           exit 1
         fi
         if ! grep -q 'INTERNAL_VENDOR_RAMDISK_TARGET' /tmp/custom_Makefile; then
-          echo "::error::Downloaded file does not reference INTERNAL_VENDOR_RAMDISK_TARGET — wrong file."
+          echo "::error::Downloaded file does not reference INTERNAL_VENDOR_RAMDISK_TARGET - wrong file."
           exit 1
         fi
 
@@ -169,10 +164,10 @@ jobs:
 
         echo "---- verification ----"
         if grep -q 'ifdef BOARD_PREBUILT_VENDOR_RAMDISK' "$MF"; then
-          echo "✅ BOARD_PREBUILT_VENDOR_RAMDISK branch present."
+          echo "OK: BOARD_PREBUILT_VENDOR_RAMDISK branch present."
           grep -A4 'ifdef BOARD_PREBUILT_VENDOR_RAMDISK' "$MF" | head -8 || true
         else
-          echo "::warning::Custom Makefile does not contain BOARD_PREBUILT_VENDOR_RAMDISK — the small-ramdisk fallback will happen."
+          echo "::warning::Custom Makefile does not contain BOARD_PREBUILT_VENDOR_RAMDISK - the small-ramdisk fallback will happen."
         fi
 
     - name: Clone Device Tree
@@ -207,7 +202,7 @@ jobs:
         SIZE=$(stat -c%s "$VBOOT")
         echo "vendor_boot.img size: $SIZE bytes ($(numfmt --to=iec $SIZE))"
         if [ "$SIZE" -lt 20000000 ]; then
-          echo "::error::vendor_boot.img is only $SIZE bytes — the platform ramdisk is empty/AOSP-generated."
+          echo "::error::vendor_boot.img is only $SIZE bytes - the platform ramdisk is empty/AOSP-generated."
           echo "Check that BOARD_PREBUILT_VENDOR_RAMDISK is set and that core/Makefile actually honours it."
           echo "If you set PATCH_CORE_MAKEFILE=false, verify the manifest branch already supports the variable."
           exit 1
